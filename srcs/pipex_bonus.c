@@ -54,7 +54,7 @@ char	**create_path_array(char **env)
 	return (path_array);
 }
 
-void	find_path(char **path, char **cmds)
+char	*find_path(char *cmd, char **path)
 {
 	char	*full_path;
 	int		i;
@@ -65,56 +65,37 @@ void	find_path(char **path, char **cmds)
 	full_path = NULL;
 	while (path[i] && exec_error == -1)
 	{
-		full_path = ft_strjoin(path[i], cmds[0]);
-		if (access(full_path, F_OK | X_OK) != -1)
-		{
-			exec_error = execve(full_path, cmds, NULL);
-			free(full_path);
-		}
+		full_path = ft_strjoin(path[i], cmd);
+		if (access(full_path, F_OK | X_OK) == 0)
+			return(full_path);
+		free(full_path);
 		i++;
 	}
-	if (exec_error == -1)
-	{
-		perror("Command not found");
-		ft_free_tab(cmds);
-		exit(127);
-	}
+	return (0);
 
 }
 
-void	in_process(char *cmd, char **path, int *pipefd)
+void	ft_execute(char *cmd, char **path)
 {
 	char **cmds;
+	char *final_path;
+	int i;
 
 	cmds = ft_split(cmd, ' ');
-	close(pipefd[0]);
-	dup2(pipefd[1], STDOUT_FILENO);
-	if (access(cmds[0], F_OK | X_OK) != -1)
+	final_path = find_path(cmds[0], path);
+	i = 0;
+	if (!path)
 	{
-		if (execve(cmds[0], cmds, NULL) == -1)
-			ft_error("Execve error");
+		while (cmds[i])
+		{
+			free(cmds[i]);
+			i++;
+		}
+		free(cmds);
+		ft_error("Path error");
 	}
-	else
-		find_path(path, cmds);
-	ft_free_tab(cmds);
-	exit(EXIT_FAILURE);
-}
-
-void	out_process(int fd, char *cmd, char **path)
-{
-	char **cmds;
-
-	cmds = ft_split(cmd, ' ');
-	dup2(fd, STDOUT_FILENO);
-	if (access(cmds[0], F_OK | X_OK) != -1)
-	{
-		if (execve(cmds[0], cmds, NULL) == -1)
-			ft_error("Execve error");
-	}
-	else 
-		find_path(path, cmds);
-	ft_free_tab(cmds);
-	exit(EXIT_FAILURE);
+	if (execve(final_path, cmds, NULL) == -1)
+		perror("Execve error");
 }
 
 void	ft_pipex(char *cmd, char **path)
@@ -129,12 +110,14 @@ void	ft_pipex(char *cmd, char **path)
 		ft_error("Fork error");
 	if (pid == 0)
 	{
-		in_process(cmd, path, pipefd);
+		close(pipefd[0]);
+		dup2(pipefd[1], STDOUT_FILENO);
+		ft_execute(cmd, path);
 	}
 	else
 	{
-		close(pipefd[1]);
 		waitpid(pid, NULL, 0);
+		close(pipefd[1]);
 		dup2(pipefd[0], STDIN_FILENO);
 	}
 }
@@ -156,11 +139,13 @@ int	main(int argc, char **argv, char **env)
 	if (path == NULL)
 		ft_error("Path not found");
 	check_file_access(argv[1], argv[argc - 1]);
-	i = 1;
+	i = 2;
 	dup2(fd[0], STDIN_FILENO);
 	while (i < argc - 2)
 		ft_pipex(argv[i++], path);
 	close(fd[0]);
-	out_process(fd[1], argv[argc - 2], path);
+	dup2(fd[1], STDOUT_FILENO);
+	ft_execute(argv[argc - 2], path);
+	ft_free_tab(path);
 	return (0);
 }
