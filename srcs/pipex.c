@@ -54,37 +54,28 @@ char	**create_path_array(char **env)
 	return (path_array);
 }
 
-void	find_path(char **path, char **cmds)
+char	*find_path(char **path, char *cmd)
 {
 	char	*full_path;
 	int		i;
-	int		exec_error;
 
 	i = 0;
-	exec_error = -1;
 	full_path = NULL;
-	while (path[i] && exec_error == -1)
+	while (path[i])
 	{
-		full_path = ft_strjoin(path[i], cmds[0]);
-		if (access(full_path, F_OK | X_OK) != -1)
-		{
-			exec_error = execve(full_path, cmds, NULL);
-			free(full_path);
-		}
+		full_path = ft_strjoin(path[i], cmd);
+		if (access(full_path, F_OK | X_OK) == 0)
+			return(full_path);
+		free(full_path);
 		i++;
 	}
-	if (exec_error == -1)
-	{
-		perror("Command not found");
-		ft_free_tab(cmds);
-		exit(127);
-	}
-
+	return (0);
 }
 
 void	in_process(int fd, char *cmd1, char **path, int *pipefd)
 {
 	char **cmds;
+	char *full_path;
 
 	cmds = ft_split(cmd1, ' ');
 	dup2(fd, STDIN_FILENO);
@@ -94,10 +85,28 @@ void	in_process(int fd, char *cmd1, char **path, int *pipefd)
 	if (access(cmds[0], F_OK | X_OK) != -1)
 	{
 		if (execve(cmds[0], cmds, NULL) == -1)
-			ft_error("Execve error");
+		{
+			perror("Command not found");
+			ft_free_tab(cmds);
+			exit(EXIT_FAILURE);
+		}
 	}
 	else
-		find_path(path, cmds);
+	{
+		full_path = find_path(path, cmds[0]);
+		if (!full_path)
+		{
+			perror("Command not found");
+			ft_free_tab(cmds);
+			exit(127);
+		}
+		if (execve(full_path, cmds, NULL) == -1)
+		{
+			perror("Command not found");
+			ft_free_tab(cmds);
+			exit(EXIT_FAILURE);
+		}
+	}
 	ft_free_tab(cmds);
 	exit(EXIT_FAILURE);
 }
@@ -105,6 +114,7 @@ void	in_process(int fd, char *cmd1, char **path, int *pipefd)
 void	out_process(int fd, char *cmd2, char **path, int *pipefd)
 {
 	char **cmds;
+	char *full_path;
 
 	cmds = ft_split(cmd2, ' ');
 	dup2(fd, STDOUT_FILENO);
@@ -114,10 +124,28 @@ void	out_process(int fd, char *cmd2, char **path, int *pipefd)
 	if (access(cmds[0], F_OK | X_OK) != -1)
 	{
 		if (execve(cmds[0], cmds, NULL) == -1)
-			ft_error("Execve error");
+		{
+			perror("Command not found");
+			ft_free_tab(cmds);
+			exit(EXIT_FAILURE);
+		}
 	}
 	else 
-		find_path(path, cmds);
+	{
+		full_path = find_path(path, cmds[0]);
+		if (!full_path)
+		{
+			perror("Command not found");
+			ft_free_tab(cmds);
+			exit(127);
+		}
+		if (execve(full_path, cmds, NULL) == -1)
+		{
+			perror("Command not found");
+			ft_free_tab(cmds);
+			exit(EXIT_FAILURE);
+		}
+	}
 	ft_free_tab(cmds);
 	exit(EXIT_FAILURE);
 }
