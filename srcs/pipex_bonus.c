@@ -1,4 +1,4 @@
-#include "pipex.h"
+#include "pipex_bonus.h"
 
 void	ft_error(char *str)
 {
@@ -6,12 +6,19 @@ void	ft_error(char *str)
 	exit(EXIT_FAILURE);
 }
 
+void	free_tab_and_exit(char **strs, char *message)
+{
+		ft_free_tab(strs);
+		ft_error(message);
+}
+
 void	check_input(int argc)
 {
 	if (argc < 5)
 	{
-		printf("Invalid input.\nValid input: \
-				./pipex infile cmd1 cmd2 cmdn ... outfile.\n");
+		ft_printf("Invalid input.\nValid input:\n\
+				./pipex infile cmd1 cmd2 cmdx ... outfile.\n\
+				./pipex here_doc LIMITER cmdx ... outfile\n");
 		return ;
 	}
 }
@@ -24,6 +31,31 @@ void	check_file_access(char *infile, char *outfile)
 		ft_error("Infile access error");
 	if (access(outfile, W_OK | R_OK) == -1)
 		ft_error("Outfile access error");
+}
+
+void	open_file(char *infile)
+{
+	int fd;
+
+	fd = open(infile, O_RDONLY);
+	if (fd == -1)
+		ft_error("Infile error");
+	dup2(fd, STDIN_FILENO);
+	close(fd);
+}
+
+void	open_here_doc(char *here_doc)
+{
+	int	fd;
+	
+	fd = open(here_doc, O_RDONLY);
+	if (fd == -1)
+	{
+		unlink(here_doc);
+		ft_error("Here_doc error");
+	}
+	dup2(fd, STDIN_FILENO);
+	unlink(here_doc);
 }
 
 char	**create_path_array(char **env)
@@ -48,7 +80,7 @@ char	**create_path_array(char **env)
 	{
 		temp = ft_strjoin(path_array[i], "/");
 		free(path_array[i]);
-		path_array[i] =  temp;
+		path_array[i] = temp;
 		i++;
 	}
 	return (path_array);
@@ -64,13 +96,14 @@ char	*find_path(char *cmd, char **path)
 	while (path[i])
 	{
 		full_path = ft_strjoin(path[i], cmd);
+		if (!full_path)
+			free_tab_and_exit(path, "Path not found");
 		if (access(full_path, F_OK | X_OK) == 0)
 			return(full_path);
 		free(full_path);
 		i++;
 	}
 	return (0);
-
 }
 
 void	ft_execute(char *cmd, char **path)
@@ -82,17 +115,33 @@ void	ft_execute(char *cmd, char **path)
 	cmds = ft_split(cmd, ' ');
 	final_path = find_path(cmds[0], path);
 	i = 0;
-	if (!path)
+	if (!final_path)
 	{
 		ft_free_tab(cmds);
+		ft_free_tab(path);
+		free(final_path);
 		ft_error("Path error");
 	}
 	if (execve(final_path, cmds, NULL) == -1)
 	{
-		perror("Command not found");
 		ft_free_tab(cmds);
+		ft_free_tab(path);
+		free(final_path);
+		perror("Command not found");
 		exit(127);
 	}
+}
+
+void	output_file(char *outfile, char *cmd, char **path)
+{
+	int	fd;
+
+	fd = open(outfile, O_WRONLY | O_TRUNC | O_CREAT, 0755);
+	if (fd == -1)
+		free_tab_and_exit(path, "Outfile error");
+	dup2(fd, STDOUT_FILENO);
+	close(fd);
+	ft_execute(cmd, path);
 }
 
 void	ft_pipex(char *cmd, char **path)
@@ -101,48 +150,78 @@ void	ft_pipex(char *cmd, char **path)
 	int	pipefd[2];
 
 	if (pipe(pipefd) == -1)
-		ft_error("Pipe error");
+		free_tab_and_exit(path, "Pipe error");
 	pid = fork();
 	if (pid == -1)
-		ft_error("Fork error");
+		free_tab_and_exit(path, "Fork error");
 	if (pid == 0)
 	{
 		close(pipefd[0]);
 		dup2(pipefd[1], STDOUT_FILENO);
+		close(pipefd[1]);
 		ft_execute(cmd, path);
 	}
 	else
 	{
-		waitpid(pid, NULL, 0);
 		close(pipefd[1]);
+		waitpid(pid, NULL, 0);
 		dup2(pipefd[0], STDIN_FILENO);
+		close(pipefd[0]);
 	}
+}
+
+void	get_input(char *limiter)
+{
+	int	fd;
+	char *line;
+	
+	fd = open("here_doc", O_CREAT | O_WRONLY | O_TRUNC, 0755);
+	if (fd == -1)
+	{
+		unlink("here_doc");
+		ft_error("Here_doc error");
+	}
+	while (1)
+	{
+		write(1, "here_doc> ", 10);
+		line = get_next_line(0);
+		if (!line)
+			ft_error("GNL error");
+		if (ft_strncmp(line, limiter, ft_strlen(limiter)) == 0)
+		{
+			free(line);
+			break ;
+		}
+		write(fd, line, ft_strlen(line));
+		free(line);
+	}
+	close(fd);
+	open_here_doc("here_doc");
 }
 
 int	main(int argc, char **argv, char **env)
 {
-	int	fd[2];
-	char **path_array;
 	int	i;
+	char **path_array;
 
 	check_input(argc);
-	fd[0] = open(argv[1], O_RDONLY);
-	fd[1] = open(argv[argc - 1], O_WRONLY | O_TRUNC | O_CREAT, 0755);
-	if (fd[0] == -1)
-		ft_error("Infile error");
-	if (fd[1] == -1)
-		ft_error("Outfile error");
-	path_array = create_path_array(env);
-	if (path_array == NULL)
-		ft_error("Path not found");
-	check_file_access(argv[1], argv[argc - 1]);
 	i = 2;
-	dup2(fd[0], STDIN_FILENO);
+	if (ft_strncmp(argv[1], "here_doc", 9) == 0)
+	{
+		get_input(argv[2]);
+		i = 3;
+	}
+	else
+		open_file(argv[1]);
+	path_array = create_path_array(env);
+	if (!path_array)
+		ft_error("Path not found");
 	while (i < argc - 2)
+	{
 		ft_pipex(argv[i++], path_array);
-	close(fd[0]);
-	dup2(fd[1], STDOUT_FILENO);
-	ft_execute(argv[argc - 2], path_array);
+	}
+	output_file(argv[argc - 1], argv[argc - 2], path_array);
+	check_file_access(argv[1], argv[argc - 1]);
 	ft_free_tab(path_array);
 	return (0);
 }
