@@ -3,23 +3,27 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: arepsa <marvin@42.fr>                      +#+  +:+       +#+         #
+#    By: arepsa <arepsa@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2023/08/01 10:56:34 by arepsa            #+#    #+#              #
-#    Updated: 2023/08/07 16:06:20 by arepsa           ###   ########.fr        #
+#    Created: 2023/08/15 11:32:45 by arepsa            #+#    #+#              #
+#    Updated: 2023/08/15 12:45:19 by arepsa           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME		=	pipex
-BONUS_NAME	=	pipex_bonus
 SRCS_DIR	=	srcs
 OBJS_DIR	=	objs
 INCLUDES	=	includes
 LIBFT		=	./libft/libft.a
 LIBFT_DIR	=	./libft
 
-SRCS			=	pipex.c
-BONUS_SRCS		=	pipex_bonus.c
+SRCS			=	pipex.c \
+					pipex_path.c \
+					pipex_utils.c
+BONUS_SRCS		=	pipex_bonus.c \
+					pipex_bonus_path.c \
+					pipex_bonus_heredoc.c \
+					pipex_bonus_utils.c
 
 CC			= cc
 LIBFLAGS	= ar -rcs
@@ -32,15 +36,13 @@ BONUS_OBJS	= $(BONUS_SRCS:%.c=$(OBJS_DIR)/%.o)
 
 all: $(NAME)
 
-bonus: $(BONUS_NAME)
-
 $(NAME): $(OBJS) $(LIBFT)
 	$(CC) $(CFLAGS) $(OBJS) $(LIBFT) -o $(NAME)
 	echo "Done compiling $(NAME)!"
 
-$(BONUS_NAME): $(BONUS_OBJS) $(LIBFT)
-	$(CC) $(CFLAGS) $(BONUS_OBJS) $(LIBFT) -o $(BONUS_NAME)
-	echo "Done compiling $(BONUS_NAME)!"
+bonus: $(BONUS_OBJS) $(LIBFT)
+	$(CC) $(CFLAGS) $(BONUS_OBJS) $(LIBFT) -o $(NAME)
+	echo "Done compiling $(NAME) bonus!"
 
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.c
 	echo "Creating .o files..."
@@ -52,15 +54,15 @@ $(LIBFT):
 	$(MAKE) -C $(LIBFT_DIR)
 
 clean:
-	$(RM) $(OBJS_DIR)
+	$(RM) $(OBJS_DIR) 
 	echo "Deleted $(NAME) $(OBJS_DIR)"
 	$(MAKE) clean -C $(LIBFT_DIR)
 
 fclean: clean
-	$(RM) $(NAME) $(BONUS_NAME) $(LIBFT)
+	$(RM) $(NAME) $(LIBFT)
 	echo "Deleted $(NAME) files and $(LIBFT)"
 	
 re: fclean all
 
-.PHONY: all clean fclean re bonus
-#.SILENT:
+.PHONY: all clean fclean re
+.SILENT:
