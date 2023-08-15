@@ -1,192 +1,104 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   pipex.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: arepsa <arepsa@student.42.fr>              +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/08/15 11:30:57 by arepsa            #+#    #+#             */
+/*   Updated: 2023/08/15 12:26:59 by arepsa           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "pipex.h"
 
-void	ft_error(char *str)
+static void	ft_execute(char *arg, char **path, char **env)
 {
-	perror(str);
-	exit(EXIT_FAILURE);
-}
-
-void	check_input(int argc)
-{
-	if (argc != 5)
-	{
-		printf("Invalid input.\nValid input: \
-				./pipex infile cmd1 cmd2 outfile.\n");
-		return ;
-	}
-}
-
-void	check_file_access(char *infile, char *outfile)
-{
-	if (access(infile, F_OK) == -1)
-		ft_error("Infile access error");
-	else if (access(infile, R_OK) == -1)
-		ft_error("Infile access error");
-	if (access(outfile, W_OK | R_OK) == -1)
-		ft_error("Outfile access error");
-}
-
-char	**create_path_array(char **env)
-{
-	int		i;
-	char	*temp;
-	char	**path_array;
-	char	*path;
-
-	i = 0;
-	path = NULL;
-	while (env[i] && path == NULL)
-	{
-		path = ft_strnstr(env[i], "PATH=", 5);
-		i++;
-	}
-	if (path == NULL)
-		ft_error("Couldn't find path.");
-	path_array = ft_split(path + 5, ':');
-	i = 0;
-	while (path_array[i])
-	{
-		temp = ft_strjoin(path_array[i], "/");
-		free(path_array[i]);
-		path_array[i] =  temp;
-		i++;
-	}
-	return (path_array);
-}
-
-char	*find_path(char **path, char *cmd)
-{
-	char	*full_path;
+	char	**cmds;
+	char	*final_path;
 	int		i;
 
+	cmds = ft_split(arg, ' ');
+	final_path = find_path(cmds[0], path);
 	i = 0;
-	full_path = NULL;
-	while (path[i])
+	if (!final_path)
 	{
-		full_path = ft_strjoin(path[i], cmd);
-		if (access(full_path, F_OK | X_OK) == 0)
-			return(full_path);
-		free(full_path);
-		i++;
+		ft_free_tab(cmds);
+		ft_free_tab(path);
+		free(final_path);
+		ft_error("Path error", 127);
 	}
-	return (0);
+	if (execve(final_path, cmds, env) == -1)
+	{
+		ft_free_tab(cmds);
+		ft_free_tab(path);
+		free(final_path);
+		ft_error("Command not found", 127);
+	}
 }
 
-void	in_process(int fd, char *cmd1, char **path, int *pipefd)
+static void	open_file(char *infile)
 {
-	char **cmds;
-	char *full_path;
+	int	fd;
 
-	cmds = ft_split(cmd1, ' ');
+	fd = open(infile, O_RDONLY);
+	if (fd == -1)
+		ft_error("Infile error", 1);
 	dup2(fd, STDIN_FILENO);
-	dup2(pipefd[1], STDOUT_FILENO);
 	close(fd);
-	close(pipefd[0]);
-	if (access(cmds[0], F_OK | X_OK) != -1)
-	{
-		if (execve(cmds[0], cmds, NULL) == -1)
-		{
-			perror("Command not found");
-			ft_free_tab(cmds);
-			exit(EXIT_FAILURE);
-		}
-	}
-	else
-	{
-		full_path = find_path(path, cmds[0]);
-		if (!full_path)
-		{
-			perror("Command not found");
-			ft_free_tab(cmds);
-			exit(127);
-		}
-		if (execve(full_path, cmds, NULL) == -1)
-		{
-			perror("Command not found");
-			ft_free_tab(cmds);
-			exit(EXIT_FAILURE);
-		}
-	}
-	ft_free_tab(cmds);
-	exit(EXIT_FAILURE);
 }
 
-void	out_process(int fd, char *cmd2, char **path, int *pipefd)
+static void	output_file(char *outfile, char *cmd2, char **path, char **env)
 {
-	char **cmds;
-	char *full_path;
+	int	fd;
 
-	cmds = ft_split(cmd2, ' ');
+	fd = open(outfile, O_WRONLY | O_TRUNC | O_CREAT, 0755);
+	if (fd == -1)
+		free_tab_and_exit(path, "Outfile error");
+	check_file_access(outfile, 1);
 	dup2(fd, STDOUT_FILENO);
-	dup2(pipefd[0], STDIN_FILENO);
 	close(fd);
-	close(pipefd[1]);
-	if (access(cmds[0], F_OK | X_OK) != -1)
-	{
-		if (execve(cmds[0], cmds, NULL) == -1)
-		{
-			perror("Command not found");
-			ft_free_tab(cmds);
-			exit(EXIT_FAILURE);
-		}
-	}
-	else 
-	{
-		full_path = find_path(path, cmds[0]);
-		if (!full_path)
-		{
-			perror("Command not found");
-			ft_free_tab(cmds);
-			exit(127);
-		}
-		if (execve(full_path, cmds, NULL) == -1)
-		{
-			perror("Command not found");
-			ft_free_tab(cmds);
-			exit(EXIT_FAILURE);
-		}
-	}
-	ft_free_tab(cmds);
-	exit(EXIT_FAILURE);
+	ft_execute(cmd2, path, env);
 }
 
-void	ft_pipex(int *fd, char *cmd1, char *cmd2, char **path)
+static void	ft_pipex(char **argv, char **path, char **env)
 {
 	int	pid;
 	int	pipefd[2];
 
 	if (pipe(pipefd) == -1)
-		ft_error("Pipe error");
+		free_tab_and_exit(path, "Pipe error");
 	pid = fork();
 	if (pid == -1)
-		ft_error("Fork error");
+		free_tab_and_exit(path, "Fork error");
 	if (pid == 0)
 	{
-		in_process(fd[0], cmd1, path, pipefd);
+		close(pipefd[0]);
+		dup2(pipefd[1], STDOUT_FILENO);
+		close(pipefd[1]);
+		ft_execute(argv[2], path, env);
 	}
 	else
 	{
-		wait(NULL);
-		out_process(fd[1], cmd2, path, pipefd);
+		close(pipefd[1]);
+		waitpid(pid, NULL, 0);
+		dup2(pipefd[0], STDIN_FILENO);
+		close(pipefd[0]);
+		output_file(argv[4], argv[3], path, env);
 	}
 }
 
 int	main(int argc, char **argv, char **env)
 {
-	int	fd[2];
-	char **path;
+	char	**path_array;
 
 	check_input(argc);
-	fd[0] = open(argv[1], O_RDONLY);
-	fd[1] = open(argv[4], O_WRONLY | O_TRUNC | O_CREAT, 0755);
-	if (fd[0] == -1)
-		ft_error("Infile error");
-	if (fd[1] == -1)
-		ft_error("Outfile error");
-	path = create_path_array(env);
-	if (path == NULL)
-		ft_error("Path not found");
-	check_file_access(argv[1], argv[4]);
-	ft_pipex(fd, argv[2], argv[3], path);
+	open_file(argv[1]);
+	check_file_access(argv[1], 0);
+	path_array = create_path_array(env);
+	if (!path_array)
+		ft_error("Path not found", 1);
+	ft_pipex(argv, path_array, env);
+	ft_free_tab(path_array);
 	return (0);
 }
