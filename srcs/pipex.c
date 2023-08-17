@@ -6,7 +6,7 @@
 /*   By: arepsa <arepsa@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/15 11:30:57 by arepsa            #+#    #+#             */
-/*   Updated: 2023/08/15 12:26:59 by arepsa           ###   ########.fr       */
+/*   Updated: 2023/08/17 12:13:41 by arepsa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,9 +41,20 @@ static void	open_file(char *infile)
 {
 	int	fd;
 
-	fd = open(infile, O_RDONLY);
-	if (fd == -1)
-		ft_error("Infile error", 1);
+	if (access(infile, F_OK | R_OK) == 0) 
+	{
+		fd = open(infile, O_RDONLY);
+		if (fd == -1)
+			ft_error("Infile error", 1);
+	}
+	else 
+	{
+		if (access(infile, F_OK) == -1 || access(infile, R_OK) == -1)
+			perror("Infile error");
+		fd = open("/dev/null", O_RDONLY);
+		if (fd == -1)
+			ft_error("Infile error", 1);
+	}
 	dup2(fd, STDIN_FILENO);
 	close(fd);
 }
@@ -52,10 +63,9 @@ static void	output_file(char *outfile, char *cmd2, char **path, char **env)
 {
 	int	fd;
 
-	fd = open(outfile, O_WRONLY | O_TRUNC | O_CREAT, 0755);
+	fd = open(outfile, O_WRONLY | O_TRUNC | O_CREAT, 0644);
 	if (fd == -1)
 		free_tab_and_exit(path, "Outfile error");
-	check_file_access(outfile, 1);
 	dup2(fd, STDOUT_FILENO);
 	close(fd);
 	ft_execute(cmd2, path, env);
@@ -94,7 +104,6 @@ int	main(int argc, char **argv, char **env)
 
 	check_input(argc);
 	open_file(argv[1]);
-	check_file_access(argv[1], 0);
 	path_array = create_path_array(env);
 	if (!path_array)
 		ft_error("Path not found", 1);

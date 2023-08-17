@@ -6,7 +6,7 @@
 /*   By: arepsa <arepsa@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/15 11:31:42 by arepsa            #+#    #+#             */
-/*   Updated: 2023/08/15 12:04:33 by arepsa           ###   ########.fr       */
+/*   Updated: 2023/08/17 09:50:37 by arepsa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,29 +24,14 @@ void	free_tab_and_exit(char **strs, char *message)
 	ft_error(message, 1);
 }
 
-void	check_input(int argc)
+int	check_input(int argc)
 {
 	if (argc < 5)
 	{
 		ft_printf("Invalid input.\nValid input:\n");
 		ft_printf("  ./pipex infile cmd1 cmd2 cmdx ... outfile.\n");
 		ft_printf("  ./pipex here_doc LIMITER cmdx ... outfile\n");
-		return ;
+		exit(1);
 	}
-}
-
-void	check_file_access(char *filename, int flag)
-{
-	if (flag == 0)
-	{
-		if (access(filename, F_OK) == -1)
-			ft_error("Infile access error", 1);
-		else if (access(filename, R_OK) == -1)
-			ft_error("Infile access error", 1);
-	}
-	if (flag == 1)
-	{
-		if (access(filename, W_OK | R_OK) == -1)
-			ft_error("Outfile access error", 1);
-	}
+	return (0);
 }
