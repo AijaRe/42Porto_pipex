@@ -13,13 +13,13 @@ Example: `./pipex infile "grep a" "cat -e" outfile` should behave like `< infile
 
 ### Materials:
 
-[Pipex tutorial - Medium](https://csnotes.medium.com/pipex-tutorial-42-project-4469f5dd5901)
-
-[Reactive guide with some edge cases](https://reactive.so/post/42-a-comprehensive-guide-to-pipex)
-
 [Playlist on Unix processes from Code Vault](https://www.youtube.com/watch?v=cex9XrZCU14&list=PLfqABt5AS4FkW5mOn2Tn9ZZLLDwA3kZUY)
 
 [Write your own Shell playlist](https://www.youtube.com/watch?v=cIBmeEpsMj0&list=PLxIRFba3rzLzxxZMMbrm_-mkI7mV9G0pj)
+
+[Pipex tutorial - Medium](https://csnotes.medium.com/pipex-tutorial-42-project-4469f5dd5901)
+
+[Reactive guide with some edge cases](https://reactive.so/post/42-a-comprehensive-guide-to-pipex)
 
 [Pipex explained (in Russian)](https://www.youtube.com/watch?v=7e_gExniT_Y)
 
