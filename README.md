@@ -33,7 +33,7 @@ Example: `./pipex infile "grep a" "cat -e" outfile` should behave like `< infile
 
 [Execve explained](https://www.youtube.com/watch?v=Wtd-8OiZOjk&t=657s)
 
-### Steps (mandatory):
+### Pipex Plan (mandatory):
 
 Validate the input.
 
