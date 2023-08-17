@@ -6,7 +6,7 @@
 /*   By: arepsa <arepsa@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/15 11:32:35 by arepsa            #+#    #+#             */
-/*   Updated: 2023/08/15 12:03:22 by arepsa           ###   ########.fr       */
+/*   Updated: 2023/08/17 12:14:13 by arepsa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,8 +31,7 @@ int		main(int argc, char **argv, char **env);
 char	**create_path_array(char **env);
 char	*find_path(char *cmd, char **path);
 /* pipex_utils.c */
-void	check_file_access(char *filename, int flag);
-void	check_input(int argc);
+int		check_input(int argc);
 void	free_tab_and_exit(char **strs, char *message);
 void	ft_error(char *str, int exit_code);
 

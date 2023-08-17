@@ -6,7 +6,7 @@
 /*   By: arepsa <arepsa@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/15 11:32:28 by arepsa            #+#    #+#             */
-/*   Updated: 2023/08/15 12:03:58 by arepsa           ###   ########.fr       */
+/*   Updated: 2023/08/17 12:14:21 by arepsa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,9 +33,9 @@ char	**create_path_array(char **env);
 /* pipex_bonus_heredoc.c */
 void	open_here_doc(char *here_doc);
 void	get_input(char *limiter);
+void	here_doc_error(char *here_doc);
 /* pipex_bonus_utils.c */
-void	check_file_access(char *filename, int flag);
-void	check_input(int argc);
+int		check_input(int argc);
 void	free_tab_and_exit(char **strs, char *message);
 void	ft_error(char *str, int exit_code);
 
