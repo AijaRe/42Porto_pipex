@@ -15,7 +15,7 @@ Example: `./pipex infile "grep a" "cat -e" outfile` should behave like `< infile
 
 [Pipex tutorial - Medium](https://csnotes.medium.com/pipex-tutorial-42-project-4469f5dd5901)
 
-[Dive deeper guide with some edge cases](https://reactive.so/post/42-a-comprehensive-guide-to-pipex)
+[Reactive guide with some edge cases](https://reactive.so/post/42-a-comprehensive-guide-to-pipex)
 
 [Playlist on Unix processes from Code Vault](https://www.youtube.com/watch?v=cex9XrZCU14&list=PLfqABt5AS4FkW5mOn2Tn9ZZLLDwA3kZUY)
 
