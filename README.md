@@ -81,6 +81,18 @@ Check your fds currently open with the command `ls -la /proc/$$/fd`
 
 To see what is inside `envp`, type `env` in your terminal.
 
+## Norminette
+This project has to be written in accordance with the Norm, which is the coding standard of the school 42.
+
+The Norm includes:
+- Forbidden: for, do...while, switch, case, goto, ternary operators and variable-length arrays 
+- Maximum of 25 lines per function
+- Maximum line length: 80 columns
+- Maximum 4 parameters per function 
+- Variable assignments and declarations must be on separate lines
+- etc...
+  
+
 Line `PATH` in `env` contains all possible paths to the command binaries. PATH=/nfs/homes/arepsa/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
 
 Split, using `:` as delimiter. Add a `/` at the end for the path to work correctly.
